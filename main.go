@@ -48,7 +48,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, World!")
 }
 func main() {
-	seed := flag.Bool("seed", true, "seed the db")
+	seed := flag.Bool("seed", false, "seed the db")
 	flag.Parse()
 
 	store, err := NewPostgresStore()

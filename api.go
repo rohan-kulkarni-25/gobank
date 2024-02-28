@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -120,15 +119,19 @@ func (s *APIServer) handleGetAccountByID(w http.ResponseWriter, r *http.Request)
 // ADD NULL CHECKS. IF USER IS NOT PASSING DATA IN PROPER MANNER GIVE THEM VALID ERRORS
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
 	req := new(CreateAccountRequest)
-	body, err := ioutil.ReadAll(r.Body)
-	fmt.Print(body)
-	if len(body) == 0 {
-		return WriteJSON(w, http.StatusBadRequest, `{"ERROR":"Request body is empty. Please Send FirstName LastName And Password to createAccount"}`)
-	}
+	// body, err := io.ReadAll(r.Body)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Print(body)
+	// if len(body) == 0 {
+	// 	return WriteJSON(w, http.StatusBadRequest, `{"ERROR":"Request body is empty. Please Send FirstName LastName And Password to createAccount"}`)
+	// }
 
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		return err
 	}
+	fmt.Print(req)
 
 	account, err := NewAccount(req.FirstName, req.LastName, req.Password)
 
