@@ -1,9 +1,9 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
@@ -17,13 +17,12 @@ type Storage interface {
 }
 
 type PostgresStore struct {
-	db *sql.DB
+	db sqlx.DB
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
 	connStr := "user=postgres dbname=postgres password=rohan sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	// db, err := sqlx.Connect("postgres", connStr)
+	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +32,7 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}
 
 	return &PostgresStore{
-		db: db,
+		db: *db,
 	}, nil
 }
 
@@ -53,6 +52,7 @@ func (s *PostgresStore) createAccountTable() error {
 	)`
 
 	_, err := s.db.Exec(query)
+	// Here we can use MustExec ALso but it will not work well with Errors
 	return err
 }
 
@@ -61,7 +61,7 @@ func (s *PostgresStore) CreateAccount(acc *Account) error {
 	(first_name, last_name, number, encrypted_password, balance, created_at)
 	values ($1, $2, $3, $4, $5, $6)`
 
-	_, err := s.db.Query(
+	_, err := s.db.Queryx(
 		query,
 		acc.FirstName,
 		acc.LastName,
@@ -82,12 +82,13 @@ func (s *PostgresStore) UpdateAccount(*Account) error {
 }
 
 func (s *PostgresStore) DeleteAccount(id int) error {
-	_, err := s.db.Query("delete from account where id = $1", id)
+	_, err := s.db.Queryx("delete from account where id = $1", id)
 	return err
 }
 
 func (s *PostgresStore) GetAccountByNumber(number int) (*Account, error) {
-	rows, err := s.db.Query("select * from account where number = $1", number)
+	// Changed to Queryx which is returning sqlx row
+	rows, err := s.db.Queryx("select * from account where number = $1", number)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (s *PostgresStore) GetAccountByNumber(number int) (*Account, error) {
 }
 
 func (s *PostgresStore) GetAccountByID(id int) (*Account, error) {
-	rows, err := s.db.Query("select * from account where id = $1", id)
+	rows, err := s.db.Queryx("select * from account where id = $1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (s *PostgresStore) GetAccountByID(id int) (*Account, error) {
 }
 
 func (s *PostgresStore) GetAccounts() ([]*Account, error) {
-	rows, err := s.db.Query("select * from account")
+	rows, err := s.db.Queryx("select * from account")
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 	return accounts, nil
 }
 
-func scanIntoAccount(rows *sql.Rows) (*Account, error) {
+func scanIntoAccount(rows *sqlx.Rows) (*Account, error) {
 	account := new(Account)
 	err := rows.Scan(
 		&account.ID,
